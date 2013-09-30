@@ -9,12 +9,12 @@ void testApp::setup(){
     ofLogLevel(OF_LOG_WARNING);
     
     //sender.setup(640, 480, "jive.local", 1234);
-    sender.setup(640, 480);
+    sender.setup(680, 512, "239.8.8.8", 1234);
     
-    data = (unsigned char*) malloc(sizeof(char)* 640 * 480 * 3*10);
+    data = (unsigned char*) malloc(sizeof(char)* 680 * 512 * 3*10);
     
-    grabber.initGrabber(640, 480);
-    
+    //grabber.initGrabber(640, 480);
+    inputImage.loadImage("/Users/geoff/Desktop/test.png");
     
     //oscReceiver.setup(9999);
     
@@ -32,28 +32,26 @@ void testApp::update(){
         sendPingTime = ofGetElapsedTimeMillis();
         
         
-        unsigned char bytes[640*480*3];
-        for(int i=0;i<640*480*3;i++){
+        unsigned char bytes[680 * 512*3];
+        for(int i=0;i<680 * 512*3;i++){
             bytes[i] = 255;
         }
         
-        
-        sender.encodeFrame(bytes, 640*480*3);
+        sender.encodeFrame(bytes, 680 * 512*3, OF_PIXELS_RGB);
         sender.sendFrame();
         
+    }else if (inputImage.isAllocated()){
+
+        if (sender.encodeFrame(inputImage)){
+            sender.sendFrame();
+            cout << "Sent Frame!!!" << endl;
+        }
+
     }
-    else if(grabber.isFrameNew()){
-        
-        ofBuffer buffer;
-        buffer.set((char*)data, 640 * 480 * 3);
-        
-        inputImage.setFromPixels(data, 640, 480, OF_IMAGE_COLOR);
-        
-        sender.encodeFrame(grabber.getPixels(),  640 * 480 * 3);
-        //    x264Encoder.encodeFrame(data, 640 * 480 * 3);
-        
-        sender.sendFrame();
-   }
+    
+       
+       
+       
     
     
     
@@ -74,7 +72,7 @@ void testApp::update(){
 void testApp::draw(){
     ofBackgroundGradient(ofColor(78,28,28), ofColor(25,14,14),OF_GRADIENT_LINEAR);
    // inputImage.draw(0,0,640,480);
-    grabber.draw(0, 0, 640, 480);
+    inputImage.draw(0, 0, 640, 480);
     
     int y = 15;
     int x = 650;

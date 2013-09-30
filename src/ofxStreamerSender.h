@@ -33,7 +33,7 @@ public:
     void setup(int width, int height, string destination_ip = "127.0.0.1", int destination_port= 1234, string preset="ultrafast");
     
     //Supports only RGB formatted image data (so data_length should be width*height*3)
-    bool encodeFrame(unsigned char *data, int data_length);
+    bool encodeFrame(unsigned char *data, int data_length, ofPixelFormat pix_format);
     
     bool encodeFrame(ofImage image);
     
@@ -48,9 +48,9 @@ public:
     float frameRate;
 
     string url;
+    string rtsp_url;
     
     string preset;
-
     
     x264_picture_t * getPictureRef();
     
@@ -62,6 +62,7 @@ public:
     
 private:
     struct AVFormatContext* avctx;
+    
     struct x264_t* encoder;
     struct SwsContext* imgctx;
 

@@ -11,6 +11,25 @@
 
 using namespace std;
 
+void av_log_shd_callback(void* ptr, int level, const char* fmt, va_list vl)
+{
+    static int print_prefix=1;
+    AVClass* avc= ptr ? *(AVClass**)ptr : NULL;
+    //if(level>av_log_get_level())
+    //    return;
+#undef fprintf
+    if(print_prefix && avc) {
+        fprintf(stdout, "[%s @ %p]", avc->item_name(ptr), avc);
+    }
+#define fprintf please_use_av_log
+    
+    print_prefix= strstr(fmt, "\n") != NULL;
+    
+    vfprintf(stdout, fmt, vl);
+    cout << "HEllo ErrROORO" << endl;
+}
+
+
 ofxStreamerReceiver::ofxStreamerReceiver(){
     bHavePixelsChanged = false;
     allocated = false;
@@ -21,7 +40,7 @@ ofxStreamerReceiver::ofxStreamerReceiver(){
 bool ofxStreamerReceiver::setup(int _port, string _host) {
     
     port = _port; host = _host;
-    url = host + ":" + ofToString(port);
+    url = host;//  ":" + ofToString(port);
     ofLog(OF_LOG_NOTICE, "Opening stream at " + url);
     
     startThread(false,false);
@@ -29,9 +48,10 @@ bool ofxStreamerReceiver::setup(int _port, string _host) {
     lastFrame = new ofImage();
     lastFrame->allocate(1, 1, OF_IMAGE_COLOR);
 
-    return connected = true;
+    av_log_set_level(48);
+    //av_log_set_callback(av_log_shd_callback);
     
-    
+    return true;
 }
 
 
@@ -47,6 +67,8 @@ void ofxStreamerReceiver::threadedFunction(){
         connected = false;
         return;
     }
+    context->debug = true;
+    cout << "AVInputFormat: " << context->iformat->name << endl;
     
     if(avformat_find_stream_info(context,NULL) < 0){
         ofLog(OF_LOG_ERROR, "Stream information not found.");
@@ -109,7 +131,7 @@ void ofxStreamerReceiver::threadedFunction(){
     avpicture_fill((AVPicture *) picrgb, picture_buf2, PIX_FMT_RGB24, width, height);
     
     
-    
+    connected = true;
     
     
     while(isThreadRunning()){

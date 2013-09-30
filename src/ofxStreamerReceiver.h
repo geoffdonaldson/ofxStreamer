@@ -27,7 +27,7 @@ extern "C"
 #include <libswscale/swscale.h>
 }
 
-class ofxStreamerReceiver : ofThread {
+class ofxStreamerReceiver : public ofBaseVideoPlayer , ofThread {
     
 public:
     ofxStreamerReceiver();
@@ -40,6 +40,11 @@ public:
     string          host;
     string          url;
     
+    bool            loadMovie(string name){return false;}
+    void            play(){}
+    void            pause(){}
+    void            stop(){}
+    
     bool            setup(int port, std::string host="udp://@");
     void            update();
     bool            isFrameNew();
@@ -48,6 +53,7 @@ public:
     void            draw(const ofPoint &p);
     void            draw(const ofRectangle &r);
     void            close();
+    ofTexture *     getTexture(){return NULL;}
     ofTexture &     getTextureReference();
     unsigned char * getPixels();
     ofPixelsRef     getPixelsRef();
@@ -57,6 +63,12 @@ public:
     long            frameNum;
     int             bitrate;
     float           frameRate;
+    
+    bool isPaused(){return false;}
+    bool isLoaded(){return false;}
+    bool isPlaying(){return false;}
+    bool setPixelFormat(ofPixelFormat pixelFormat){return false;}
+    ofPixelFormat getPixelFormat(){return OF_PIXELS_RGB;}
     
 private:
     struct SwsContext* imgctx;
@@ -85,9 +97,6 @@ private:
     
     //  pthread_mutex_t mutex;
     ofMutex             mutex;
-
-    
-    
 };
 
 

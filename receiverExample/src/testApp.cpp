@@ -6,7 +6,7 @@ void testApp::setup(){
     ofSetWindowPosition(0, 540);
 
     ofLogLevel(OF_LOG_WARNING);
-    receiver.setup(1234);
+    receiver.setup(1234, "rtsp://10.0.1.3:7070/UC0_0");
     
     oscSender.setup("localhost.local", 9999);
     
