@@ -35,6 +35,7 @@ ofxStreamerReceiver::ofxStreamerReceiver(){
     allocated = false;
     connected = false;
     newFrame = false;
+    paused = false;
 }
 
 bool ofxStreamerReceiver::setup(int _port, string _host) {
@@ -43,8 +44,14 @@ bool ofxStreamerReceiver::setup(int _port, string _host) {
     url = host;//  ":" + ofToString(port);
     ofLog(OF_LOG_NOTICE, "Opening stream at " + url);
     
-    startThread(false,false);
+    bHavePixelsChanged = false;
+    allocated = false;
+    connected = false;
+    newFrame = false;
+    paused = false;
 
+    startThread(false,true);
+    
     lastFrame = new ofImage();
     lastFrame->allocate(1, 1, OF_IMAGE_COLOR);
 
@@ -67,7 +74,7 @@ void ofxStreamerReceiver::threadedFunction(){
         connected = false;
         return;
     }
-    context->debug = true;
+    context->max_delay = 0;
     cout << "AVInputFormat: " << context->iformat->name << endl;
     
     if(avformat_find_stream_info(context,NULL) < 0){
@@ -136,6 +143,8 @@ void ofxStreamerReceiver::threadedFunction(){
     
     while(isThreadRunning()){
         
+        if(paused) continue;
+        
         if(&packet){
             av_free_packet(&packet);
             av_init_packet(&packet);
@@ -170,12 +179,12 @@ void ofxStreamerReceiver::threadedFunction(){
                     mutex.unlock();
 
                 } else {
-                    cout<<"No frame decoded result is:"<<ofToString(result)<<endl;
+                    //cout<<"No frame decoded result is:"<<ofToString(result) << "\n" << endl;
                 }
                 
             }
         } else {
-            cout<<"EOF or error statuscode is: "<<ofToString(readStatus)<<endl;
+            cout<<"EOF or error statuscode is: "<<ofToString(readStatus) << "\n" << endl;
         }
         
     }
@@ -183,15 +192,17 @@ void ofxStreamerReceiver::threadedFunction(){
 }
 
 void ofxStreamerReceiver::update() {
+    
+    if (!connected) return;
+    if (picrgb->data[0] == NULL) return;
+    
     if(mutex.tryLock()){
         if(newFrame){
             if(!allocated){
                 lastFrame = new ofImage();
                 lastFrame->allocate(width, height, OF_IMAGE_COLOR);
                 allocated = true;
-                
             }
-            
             
             // save frame to image
             lastFrame->setFromPixels(picrgb->data[0], width, height, OF_IMAGE_COLOR);
@@ -203,15 +214,17 @@ void ofxStreamerReceiver::update() {
             frameNum++;
             
             bHavePixelsChanged = true;
-            
             newFrame=false;
-            
-            
         }
         mutex.unlock();
     } else {
       //  cout<<"Could not lock"<<endl;
     }
+}
+
+void ofxStreamerReceiver::setPaused(bool p)
+{
+    paused = p;
 }
 
 void ofxStreamerReceiver::draw(const ofPoint &p) {
@@ -236,17 +249,19 @@ void ofxStreamerReceiver::draw(float x, float y, float w, float h) {
 
 unsigned char * ofxStreamerReceiver::getPixels() {
     if(allocated){
+        bHavePixelsChanged = false;
         return lastFrame->getPixels();
     }
     return nil;
 }
 
 ofPixelsRef ofxStreamerReceiver::getPixelsRef() {
+    bHavePixelsChanged = false;
     return lastFrame->getPixelsRef();
 }
 
 ofTexture & ofxStreamerReceiver::getTextureReference() {
-
+    bHavePixelsChanged = false;
     return lastFrame->getTextureReference();
 }
 
@@ -255,17 +270,35 @@ bool ofxStreamerReceiver::isFrameNew() {
 }
 
 bool ofxStreamerReceiver::isConnected() {
-    return connected;
+    return (connected && newFrame);
 }
 
 void ofxStreamerReceiver::close() {
+    
+    waitForThread(true);
     delete lastFrame;
+    
+    if(&packet){
+        av_free_packet(&packet);
+    }    
+    if (pixelData != NULL) {
+        free(pixelData);
+    }
+    
     av_free(pic);
     av_free(picrgb);
     av_free(picture_buf);
     av_free(picture_buf2);
     av_read_pause(context);
-    avformat_free_context(oc);
+    sws_freeContext(img_convert_ctx);
+    
+    if (context)
+        avformat_free_context(context);
+    if(oc)
+        avformat_free_context(oc);
+    if(ccontext)
+        avcodec_close(ccontext);
+    
     allocated = false;
 }
 

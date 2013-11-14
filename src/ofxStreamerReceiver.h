@@ -42,7 +42,7 @@ public:
     
     bool            loadMovie(string name){return false;}
     void            play(){}
-    void            pause(){}
+    void            setPaused(bool p);
     void            stop(){}
     
     bool            setup(int port, std::string host="udp://@");
@@ -71,7 +71,6 @@ public:
     ofPixelFormat getPixelFormat(){return OF_PIXELS_RGB;}
     
 private:
-    struct SwsContext* imgctx;
     
     AVFormatContext*    context;
     AVCodecContext*     ccontext;
@@ -92,11 +91,13 @@ private:
     void                threadedFunction();
     
     bool                newFrame;
+    bool                paused;
     
     unsigned char *     pixelData;
     
     //  pthread_mutex_t mutex;
     ofMutex             mutex;
+    Poco::Condition     isConnectedCondition;
 };
 
 
