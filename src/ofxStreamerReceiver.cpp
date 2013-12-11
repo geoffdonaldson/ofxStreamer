@@ -52,6 +52,8 @@ bool ofxStreamerReceiver::setup(int _port, string _host) {
 
     startThread(false,true);
     
+    dead = false;
+    
     lastFrame = new ofImage();
     lastFrame->allocate(1, 1, OF_IMAGE_COLOR);
 
@@ -183,8 +185,11 @@ void ofxStreamerReceiver::threadedFunction(){
                 }
                 
             }
-        } else {
-            cout<<"EOF or error statuscode is: "<<ofToString(readStatus) << "\n" << endl;
+        } else
+        {
+            setDead(true);
+            newFrame = false;
+            cout << "EOF or error statuscode is: " << ofToString(readStatus) << "\n" << endl;
         }
         
     }

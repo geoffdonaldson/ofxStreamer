@@ -64,11 +64,13 @@ public:
     int             bitrate;
     float           frameRate;
     
+    bool isDead() { return dead; }
     bool isPaused(){return false;}
     bool isLoaded(){return false;}
     bool isPlaying(){return false;}
     bool setPixelFormat(ofPixelFormat pixelFormat){return false;}
     ofPixelFormat getPixelFormat(){return OF_PIXELS_RGB;}
+    void setDead(bool d) { dead = d; }
     
 private:
     
@@ -92,6 +94,7 @@ private:
     
     bool                newFrame;
     bool                paused;
+    bool                dead;
     
     unsigned char *     pixelData;
     
